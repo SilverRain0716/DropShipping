@@ -1,0 +1,24 @@
+name: eBay Crawler
+
+on:
+  schedule:
+    - cron: '0 21 * * *'   # KST 06:00
+    - cron: '0 9 * * *'    # KST 18:00
+  workflow_dispatch:        # 수동 실행 버튼
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: EC2 SSH 접속 후 크롤러 실행
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: 52.79.177.182
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/dropship-crawler
+            source venv/bin/activate
+            mkdir -p ~/logs
+            python ebay_sold_crawler.py >> ~/logs/crawl.log 2>&1

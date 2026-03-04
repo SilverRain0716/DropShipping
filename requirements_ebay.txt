@@ -1,0 +1,7 @@
+# 이베이 Sold 수집기 v2 의존성
+# 설치: pip install -r requirements_ebay.txt
+
+playwright==1.44.0
+gspread==6.1.2
+google-auth==2.29.0
+tenacity==8.3.0
