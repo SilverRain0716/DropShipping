@@ -17,6 +17,7 @@ jobs:
           host: 52.79.177.182
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 50m
           script: |
             cd ~/dropship-crawler
             source venv/bin/activate
