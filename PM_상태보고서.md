@@ -1,13 +1,13 @@
 # 🧠 P1 PM 상태보고서
 > 새 채팅 시작 시 이 파일을 P1에 업로드하면 컨텍스트 즉시 복원됩니다.
 
-업데이트: 2026-03-05 (Day 3 완료 / 위닝 상품 3개 확정)
+업데이트: 2026-03-07 (Day 4 완료 / 채널 전략 수정 — Amazon FBM 추가)
 
 ---
 
 ## 📍 사업 현황
 - **Phase**: 1 (M1~4)
-- **진행일차**: Day 3 완료 / Day 4 시작 전
+- **진행일차**: Day 4 완료 / Day 5 시작 전
 - **마스터플랜 저장소**: https://github.com/SilverRain0716/DropShipping
 
 ---
@@ -21,30 +21,40 @@
 
 ---
 
+## 🛒 채널 전략 (2026-03-07 수정 확정)
+
+### Phase 구조
+| Phase | 채널 | 상태 | 진입 조건 |
+|---|---|---|---|
+| 1-A | **Etsy US** | 🟡 신원인증 대기 중 | 현재 진행 중 |
+| 1-B | **Amazon FBM** | ⬜ 셋업 준비 중 | Etsy 첫 판매 1건 확인 즉시 |
+| 2 | **스마트스토어 (네이버)** | ⬜ 대기 | Etsy+Amazon 합산 월 $3,000+ |
+| 3 | **쿠팡** | ⬜ 대기 | 스마트스토어 월 주문 50건+ |
+
+### 채널 전략 원칙
+- **Amazon FBM** 선택 확정 (FBA 금지 — F2 비자 + 재고 부담)
+- Etsy 검증 상품 → Amazon FBM 동일 상품 즉시 이전
+- Amazon 가격 = Etsy 가격 대비 5~10% 낮게 설정
+- Amazon Individual 계정으로 시작 → 월 40건 이상 시 Professional 전환
+
+### 수정된 $10,000 달성 시나리오
+| 시점 | 활성 채널 | 예상 월 순익 |
+|---|---|---|
+| M1~2 | Etsy 초기 | $500~1,000 |
+| M3~4 | Etsy + Amazon FBM | $2,000~4,000 |
+| M5~6 | + 스마트스토어 | $5,000~7,000 |
+| M7~8 | + 쿠팡 | **$10,000+** |
+
+---
+
 ## 🖥️ 인프라 현황
 | 항목 | 상태 | 비고 |
 |---|---|---|
 | 로컬 환경 | ✅ 완료 | Windows / Python 3.11.9 (64bit) / pyenv / venv |
-| 로컬 크롤러 경로 | ✅ | C:\projects\dropship-crawler\ |
 | AWS EC2 K-Trader | ✅ 실행 중 | 키움 API 전용 / IP: 43.203.218.220 / t3.small / 서울 리전 |
 | AWS EC2 dropship-crawler | ✅ 실행 중 | 크롤러 전용 / IP: 52.79.177.182 / t3.micro / 서울 리전 |
-| EC2 OS | ✅ | Ubuntu 24.04 LTS |
-| EC2 Python | ✅ | Python 3.12.3 + Playwright + Chromium 설치 완료 |
-| EC2 경로 | ✅ | ~/dropship-crawler (venv 구성 완료) |
-| pem 파일 위치 | ⚠️ 로컬만 보관 | C:\Users\Administrator\Downloads\ktrader-key.pem |
-| SSH 접속 명령어 | | `ssh -i "C:\Users\Administrator\Downloads\ktrader-key.pem" ubuntu@52.79.177.182` |
-| **EC2 메모리 이슈** | ⚠️ 모니터링 중 | t2.micro 한계 / TikTok 추가 후 t3.small 업그레이드 검토 |
-
----
-
-## 🌐 IP 관리 전략 (확정)
-| 구분 | IP | 용도 |
-|---|---|---|
-| K-Trader EC2 (43.203.x.x) | 한국 IP | 키움 API 전용 — 크롤러 절대 금지 |
-| dropship-crawler EC2 (52.79.x.x) | 한국 IP → 미국 Proxy 경유 | 크롤링 전용 |
-| Etsy 셀러 계정 접속 | 미국 집 IP (동부) | 당분간 집 IP 사용 |
-| **Etsy 접속 (5월 한국 출국 전)** | Webshare Static $6/월 구매 예정 | 출국 2주 전 설정 필요 |
-| 스마트스토어·쿠팡 | 한국 IP | 별도 관리 |
+| EC2 메모리 이슈 | ⚠️ 모니터링 중 | TikTok 추가 후 t3.small 업그레이드 검토 |
+| SSH 접속 | | `ssh -i "C:\Users\Administrator\Downloads\ktrader-key.pem" ubuntu@52.79.177.182` |
 
 ---
 
@@ -52,85 +62,98 @@
 | 서비스 | 용도 | 상태 | 비용 |
 |---|---|---|---|
 | Webshare Rotating Residential | EC2 크롤링 전용 (US IP 10개) | ✅ 활성 | $3.50/월 |
-| Webshare Static Residential | Etsy 계정 고정 IP | ⬜ 5월 출국 전 구매 예정 | $6/월 예정 |
+| Webshare Static Residential | Etsy/Amazon 계정 고정 IP | ⬜ 5월 출국 전 구매 예정 | $6/월 예정 |
 
 ---
 
 ## 🕷️ 크롤러 현황
 | 크롤러 | 상태 | 비고 |
 |---|---|---|
-| eBay Sold 크롤러 v2 | ✅ 운영 중 | ⚠️ 스폰서 필터 버그 / 배송비 파싱 오류 — P2 수정 중 |
-| Amazon 베스트셀러 크롤러 v1.0 | ✅ 운영 중 | ⚠️ 순위변동 NULL — P2 재수집 예정 |
+| eBay Sold 크롤러 v2 | ✅ 운영 중 | 스폰서 필터 제거 / 배송비 파싱 수정 완료 |
+| Amazon 베스트셀러 v1.0 | ✅ 운영 중 | 순위변동 None 처리 / 홈데코 타임아웃 모니터링 |
 | GitHub Actions cron | ✅ 완료 | KST 06:00 / 18:00 자동 실행 |
-| TikTok 크롤러 | ⬜ Day 4 예정 | |
+| TikTok 크롤러 | ⬜ Day 5 착수 | |
 | 브랜드공홈 크롤러 | ⬜ 대기 | |
-| Slack/카카오 알림 | ⬜ Day 4 예정 | |
+| Slack/카카오 알림 | ⬜ Day 5 예정 | |
 
 ---
 
 ## 📦 수집 데이터 현황
 | 소스 | 수집량 | 저장소 | 상태 |
 |---|---|---|---|
-| eBay Sold | 3,490행 | Google Sheets `eBay_Sold_DB` | ✅ 자동수집 중 (스폰서 필터 수정 예정) |
-| Amazon 홈데코 | 60개 | `Amazon_홈데코` | ✅ (순위변동 NULL 수정 예정) |
+| eBay Sold | 460행 | `eBay_Sold_DB` | ✅ 자동수집 중 |
+| Amazon 홈데코 | 30개 | `Amazon_홈데코` | ⚠️ 타임아웃 간헐적 |
 | Amazon 반려동물 | 60개 | `Amazon_반려동물` | ✅ |
-| Amazon 주방용품 | 50개 | `Amazon_주방용품` | ✅ |
-| **합계** | **3,660개** | | |
+| Amazon 주방용품 | 60개 | `Amazon_주방용품` | ✅ |
+| **합계** | **610개** | | |
 
 ---
 
-## 🏆 위닝 상품 현황 (Day 3 확정)
+## 🏆 위닝 상품 현황
+| 순위 | 상품명 | 마진율 | 소싱처 | Etsy | Amazon FBM |
+|---|---|---|---|---|---|
+| 1 | Howard Miller Loman Mantel Clock | 54.4% | Faire | ⬜ 인증 후 즉시 | ⬜ Etsy 첫 판매 후 |
+| 2 | Frankenstein Bride Wall Decor | 49.9% | Spocket/Faire | ⬜ 인증 후 즉시 | ⬜ Etsy 첫 판매 후 |
+| 3 | Global Views Calisto Head Vase | 56.4% | Global Views | ⬜ 재고 확인 후 | ⬜ 재고 확인 후 |
 
-| 순위 | 상품명 | 마진율 | 소싱처 | 리스팅 상태 |
-|---|---|---|---|---|
-| 1 | Howard Miller Loman Mantel Clock | 54.4% | Faire | ⬜ P4 착수 예정 |
-| 2 | Frankenstein Bride Wall Decor | 49.9% | Spocket/Faire | ⬜ P4 착수 예정 |
-| 3 | Global Views Calisto Head Vase | 56.4% | Global Views 직접 | ⬜ 48h 재고 확인 후 착수 |
-
-**평균 마진율: 43.1%** (목표 25% 대비 초과 달성)
-
-> ⚠️ 주의: 스폰서=Y 데이터 기반 선정 — 실수요 과대평가 가능성 있음. 리스팅 후 반응 모니터링 필수.
+**평균 마진율: 43.1%**
+> ⚠️ 스폰서=Y 데이터 기반 선정 — 리스팅 후 실반응 모니터링 필수
 
 ---
 
-## 💰 마진 기준 (카테고리별 확정)
-| 카테고리 | 최소 마진 | 비고 |
+## 🛍️ Etsy Shop 현황
+| 항목 | 내용 |
+|---|---|
+| Shop 이름 | TrendPickFinds ✅ 확정 |
+| 정산 계좌 | Wise USD (Plaid 연동 완료) |
+| 신원인증 | ⏳ Persona Express Biometric 제출 완료 (1~3일 소요) |
+| 리스팅 초안 | ✅ #1 #2 완료 |
+| 라이브 상태 | ⬜ 인증 완료 대기 중 |
+
+### 확정 가격
+| 상품 | 정가 | 초기 할인가 | 할인율 |
+|---|---|---|---|
+| #1 Clock | $79.99 | $71.99 | 10% |
+| #2 Goth | $49.99 | $42.49 | 15% |
+
+---
+
+## 🛒 Amazon FBM 셋업 현황
+| 항목 | 상태 | 비고 |
 |---|---|---|
-| 캔들·홈 디퓨저 | 35%+ | 소모품·반품율 낮음·프리미엄 가격 가능 |
-| 반려동물 소품 | 35%+ | 니치 시장·경쟁 공백 큼 |
-| 주방 도구·가젯 | 25%+ | 경쟁 많음·마진 타이트 |
-| 미니멀 스테이셔너리 | 40%+ | 소형·경량·배송비 최소 |
-| 친환경 생활용품 | 30%+ | 에코 구매자 가격 둔감 |
-| **공통 하한선** | **25%** | 이 이하 상품 리스팅 진행 금지 |
+| 셀러 계정 개설 | ⬜ Day 5 진행 | Individual로 시작 |
+| Wise USD 계좌 연동 | ✅ 준비됨 | Etsy와 동일 계좌 사용 가능 |
+| 위닝 #1 #2 리스팅 초안 | ⬜ P4 작성 예정 | |
+| FBM 배송 설정 | ⬜ 셋업 후 | 공급처 직배송 / 5~10 business days |
+
+### Amazon 가격 전략
+| 상품 | Etsy 정가 | Amazon 가격 | 차이 |
+|---|---|---|---|
+| #1 Clock | $79.99 | $72.99 | -9% |
+| #2 Goth | $49.99 | $45.99 | -8% |
+| #3 Vase | $109.00 | $98.99 | -9% |
 
 ---
 
 ## 📊 KPI 현황
 | 지표 | 목표 (M4) | 현재 | 판정 |
 |---|---|---|---|
-| 크롤링 소스 가동 | 4개 | 2개 (eBay+Amazon) | 🟡 진행중 |
-| 데이터 정합성 | 95%+ | 96.7% | ✅ 통과 |
-| Etsy 리스팅 | 10개+ | 0개 | ⬜ **Day 4 P4 착수** |
-| 월 주문 | 30건 | 0건 | ⬜ 미시작 |
-| 위닝 상품 확정 | 3개 | **3개** | ✅ **달성** |
-| 사업자 등록 | 완료 | 미완료 | ⬜ 미시작 |
+| 크롤링 소스 가동 | 4개 | 2개 (eBay+Amazon) | 🟡 |
+| 데이터 정합성 | 95%+ | ✅ 유지 | ✅ |
+| Etsy 리스팅 | 10개+ | 0개 (인증 대기) | 🟡 |
+| Amazon FBM 리스팅 | 10개+ | 0개 (셋업 준비) | ⬜ |
+| 월 주문 합산 | 30건 | 0건 | ⬜ |
+| 위닝 상품 확정 | 3개 | 3개 | ✅ |
+| 사업자 등록 | 완료 | 미완료 | ⬜ |
 
 ---
 
-## 🛒 채널 현황
-| 채널 | 상태 | 진입 조건 |
-|---|---|---|
-| Etsy US | ⬜ **계정 개설 필요** | Day 4 최우선 — 집 IP로 즉시 개설 |
-| 스마트스토어 | ⬜ Phase 2 | Etsy 월 주문 30건 + 위닝 3개 달성 후 |
-| 쿠팡 | ⬜ Phase 3 | 스마트스토어 월 주문 50건 달성 후 |
-
----
-
-## 📅 Day 4 우선순위
-1. 🔴 **Etsy 계정 개설** (집 IP로 즉시) — 리스팅 선행 조건
-2. 🔴 **P4** — 위닝 #1 #2 Etsy 리스팅 즉시 착수
-3. 🔴 **P2** — 크롤러 3개 이슈 수정 (스폰서 필터 / 배송비 파싱 / Amazon 순위변동)
-4. 🟡 **P4** — 위닝 #3 Global Views 재고 확인 후 리스팅
+## 📅 Day 5 우선순위
+1. 🔴 Etsy 신원인증 완료 확인 → 즉시 라이브
+2. 🔴 Amazon Individual 셀러 계정 개설
+3. 🔴 P4 — Amazon FBM 리스팅 초안 작성 (#1 #2)
+4. 🟡 P2 — TikTok Shop 크롤러 개발
+5. 🟡 P2 — Slack/카카오 알림 웹훅
 
 ---
 
@@ -141,17 +164,18 @@
 | Webshare Rotating | $3.50/월 |
 | Webshare Static (예정) | $6/월 (5월~) |
 | AWS EC2 dropship-crawler | ~$8~10/월 |
-| **합계** | **~$32/월** |
+| Amazon Individual 수수료 | $0.99/건 (월 40건 미만) |
+| **현재 합계** | **~$32/월** |
 
 ---
 
 ## ⚠️ 보안 원칙 (절대 준수)
 - 크롤러 실행: EC2(52.79.177.182) + 미국 Proxy 경유만 허용
 - 로컬 PC 크롤러 직접 실행 금지
-- `service_account.json` → GitHub 업로드 금지
-- `ktrader-key.pem` → GitHub 업로드 금지
-- Webshare 크리덴셜 → .env 파일 관리, GitHub 업로드 금지
-- GitHub Personal Access Token → 채팅에 절대 입력 금지
+- `service_account.json` / `ktrader-key.pem` GitHub 업로드 금지
+- Webshare 크리덴셜 → .env 파일 관리
+- GitHub Personal Access Token → 채팅 입력 절대 금지
+- **계좌번호 / 라우팅번호 / 이메일 → 보고서 포함 금지**
 
 ---
 
