@@ -1,8 +1,9 @@
 """
-Amazon Best Seller 크롤러 v1.0
+Amazon Best Seller 크롤러 v1.1
 - Playwright 기반 실제 브라우저 방식 (봇 감지 우회)
 - 베스트셀러 TOP100: 홈데코 / 반려동물 / 주방용품
-- 수집 항목: 상품명, 순위, 가격, 리뷰수, ASIN, 순위변동
+- [v1.1 수정] 이슈 #3: 순위변동 Amazon 비노출 확정 — None 처리
+- [v1.1 수정] 상품명 셀렉터 태그 무관 클래스 매칭으로 수정
 - Google Sheets 자동 저장 연동
 
 ⚠️ 이 크롤러는 EC2(52.79.177.182) + Webshare US Proxy에서만 실행
@@ -36,7 +37,7 @@ load_dotenv()
 CATEGORIES = [
     {
         "name": "홈데코",
-        "url":  "https://www.amazon.com/Best-Sellers-Home-Decor/zgbs/home-garden/",
+        "url":  "https://www.amazon.com/Best-Sellers-Home-Decor/zgbs/home-garden/1063498/",
     },
     {
         "name": "반려동물",
@@ -259,24 +260,26 @@ def parse_review_count(review_str: str) -> Optional[int]:
         return None
 
 
-def parse_rank_change(badge_text: str) -> str:
+def parse_rank_change(badge_text: str) -> Optional[int]:
     """
-    순위 변동 텍스트 파싱
-    'up 5 in last month' → '▲5'
-    'down 3 in last month' → '▼3'
+    순위변동 파싱 — 이슈 #3 수정: 문자열 대신 숫자 반환 (NULL 방지)
+    'up 5 in last month' → 5  (상승)
+    'down 3 in last month' → -3 (하락)
+    'NEW' → 0 (신규 진입)
+    파싱 불가 → 0
     """
     if not badge_text:
-        return ""
-    text = badge_text.lower()
+        return None
+    text = badge_text.strip().lower()
     num_match = re.search(r"\d+", text)
-    num = num_match.group() if num_match else "?"
-    if "up" in text:
-        return f"▲{num}"
-    elif "down" in text:
-        return f"▼{num}"
+    num = int(num_match.group()) if num_match else 0
+    if "up" in text or "↑" in text:
+        return num
+    elif "down" in text or "↓" in text:
+        return -num
     elif "new" in text:
-        return "NEW"
-    return ""
+        return 0
+    return None
 
 
 # ──────────────────────────────────────────────
@@ -375,9 +378,10 @@ async def parse_best_sellers(page: Page, category_name: str, page_num: int) -> l
             if rank == 0:
                 rank = (page_num - 1) * 50 + idx + 1
 
-            # ── 상품명 (여러 셀렉터 순차 시도)
+            # ── 상품명 — 태그 무관 클래스명으로 매칭 (div/span 혼용 대응)
             title = ""
             for sel in [
+                "._cDEzb_p13n-sc-css-line-clamp-3_g3dy1",   # 태그 무관 클래스 매칭
                 "div._cDEzb_p13n-sc-css-line-clamp-3_g3dy1",
                 "span.a-size-base-plus",
                 "span.a-size-small.a-text-normal",
@@ -445,19 +449,9 @@ async def parse_best_sellers(page: Page, category_name: str, page_num: int) -> l
                     or ""
                 )
 
-            # ── 순위변동 (신규/상승/하락)
-            rank_change = ""
-            for sel in [
-                "span.zg-badge-text",
-                "div._cDEzb_p13n-sc-badge_3mJ9Z span",
-                "span.a-badge-text",
-            ]:
-                badge_el = await item.query_selector(sel)
-                if badge_el:
-                    badge_text = await badge_el.inner_text()
-                    rank_change = parse_rank_change(badge_text)
-                    if rank_change:
-                        break
+            # ── 순위변동 — Amazon 베스트셀러 페이지에서 현재 비노출 확인 (2026-03-07)
+            # HTML 분석 결과 배지 요소 없음 → None 처리 (Sheets 빈칸)
+            rank_change = None
 
             # 제목 없는 카드 (광고/더미) 스킵
             if not title:
@@ -503,6 +497,7 @@ async def crawl_page(url: str, category_name: str, page_num: int, proxy: dict) -
             await random_delay(2, 4)
 
             # 실제 베스트셀러 페이지 이동
+            # 2페이지는 URL에 pg=2 파라미터 추가
             # 아마존 베스트셀러 2페이지 URL: ref_ + pg 파라미터 방식
             if page_num == 1:
                 target_url = url

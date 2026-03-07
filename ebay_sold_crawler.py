@@ -1,9 +1,9 @@
 """
-eBay Sold Listings 크롤러 v2.2
+eBay Sold Listings 크롤러 v2.3
 - Playwright 기반 실제 브라우저 방식 (Akamai 봇 감지 우회)
 - Webshare Rotating US Proxy 연동 (10개 풀 로테이션)
-- HTML 구조 분석 완료 (2026-03-02) 기준 셀렉터 적용
-- Google Sheets 자동 저장 연동
+- [v2.3] 이슈 #1: 스폰서 필터 제거 — eBay Sold 구조상 구분 불가 확인
+- [v2.3 수정] 이슈 #2: 배송비 #ERROR! 방지 — parse_shipping() 적용
 
 ⚠️ 이 크롤러는 EC2(52.79.177.182) + Webshare US Proxy에서만 실행
 ⚠️ 로컬 PC 직접 실행 금지 — 키움 API(K-Trader) IP와 혼용 절대 금지
@@ -236,6 +236,29 @@ def parse_feedback_count(feedback_str: str) -> Optional[int]:
     return int(num)
 
 
+def parse_shipping(shipping_text: str) -> Optional[float]:
+    """
+    배송비 텍스트 파싱 — 이슈 #2 수정 (#ERROR! 방지)
+    'Free shipping' → 0.0
+    '+$5.99 shipping' → 5.99
+    파싱 실패 → None (Sheets에 빈칸으로 저장)
+    """
+    if not shipping_text:
+        return 0.0
+    text = shipping_text.strip().lower()
+    # 무료 배송 감지
+    if "free" in text:
+        return 0.0
+    # 숫자 추출 — "$5.99", "+$3.00" 등 처리
+    match = re.search(r"\$?([\d]+\.[\d]{1,2})", text)
+    if match:
+        try:
+            return float(match.group(1))
+        except ValueError:
+            return None
+    return None
+
+
 # ──────────────────────────────────────────────
 # 페이지 파싱 (검증된 셀렉터 적용)
 # ──────────────────────────────────────────────
@@ -321,14 +344,22 @@ async def parse_sold_items(page: Page, keyword: str) -> list[dict]:
             condition_el = await item.query_selector("div.s-card__subtitle span.su-styled-text")
             condition = (await condition_el.inner_text()).strip() if condition_el else ""
 
-            # ── 배송비
-            shipping = ""
+            # ── 스폰서 여부 (참고용 수집만 — 필터링 없음)
+            # eBay Sold 페이지 구조상 자연판매/스폰서 구분 불가 확인 (2026-03-07)
+            footer_el = await item.query_selector("div.s-card__footer")
+            is_sponsored = False
+            if footer_el:
+                is_sponsored = "Sponsored" in (await footer_el.inner_text())
+
+            # ── 배송비 — 이슈 #2 수정: parse_shipping()으로 #ERROR! 방지
+            raw_shipping = ""
             attr_rows = await item.query_selector_all("div.s-card__attribute-row")
             for row in attr_rows:
                 row_text = await row.inner_text()
                 if "delivery" in row_text.lower() or "shipping" in row_text.lower() or "free" in row_text.lower():
-                    shipping = row_text.strip()
+                    raw_shipping = row_text.strip()
                     break
+            shipping = parse_shipping(raw_shipping)  # float 또는 None
 
             # ── 판매자 정보
             seller_spans = await item.query_selector_all(
@@ -337,12 +368,6 @@ async def parse_sold_items(page: Page, keyword: str) -> list[dict]:
             seller_id    = (await seller_spans[0].inner_text()).strip() if len(seller_spans) >= 1 else ""
             feedback_str = (await seller_spans[1].inner_text()).strip() if len(seller_spans) >= 2 else ""
             feedback_count = parse_feedback_count(feedback_str)
-
-            # ── 스폰서 여부
-            footer_el = await item.query_selector("div.s-card__footer")
-            is_sponsored = False
-            if footer_el:
-                is_sponsored = "Sponsored" in (await footer_el.inner_text())
 
             results.append({
                 "수집일시":      datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
