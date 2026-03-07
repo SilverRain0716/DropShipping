@@ -1,13 +1,13 @@
 # 🧠 P1 PM 상태보고서
 > 새 채팅 시작 시 이 파일을 P1에 업로드하면 컨텍스트 즉시 복원됩니다.
 
-업데이트: 2026-03-02 (Day 1 완료 / 전략 확정)
+업데이트: 2026-03-05 (Day 3 완료 / 위닝 상품 3개 확정)
 
 ---
 
 ## 📍 사업 현황
 - **Phase**: 1 (M1~4)
-- **진행일차**: Day 1 완료 / Day 2 시작 전
+- **진행일차**: Day 3 완료 / Day 4 시작 전
 - **마스터플랜 저장소**: https://github.com/SilverRain0716/DropShipping
 
 ---
@@ -33,35 +33,63 @@
 | EC2 경로 | ✅ | ~/dropship-crawler (venv 구성 완료) |
 | pem 파일 위치 | ⚠️ 로컬만 보관 | C:\Users\Administrator\Downloads\ktrader-key.pem |
 | SSH 접속 명령어 | | `ssh -i "C:\Users\Administrator\Downloads\ktrader-key.pem" ubuntu@52.79.177.182` |
-| **미국 Residential Proxy** | 🔴 미도입 | Day 2 도입 예정 / 월 $50~100 예상 |
+| **EC2 메모리 이슈** | ⚠️ 모니터링 중 | t2.micro 한계 / TikTok 추가 후 t3.small 업그레이드 검토 |
 
 ---
 
 ## 🌐 IP 관리 전략 (확정)
-> **서울 EC2 + 미국 Residential Proxy** 방식으로 확정
-
 | 구분 | IP | 용도 |
 |---|---|---|
 | K-Trader EC2 (43.203.x.x) | 한국 IP | 키움 API 전용 — 크롤러 절대 금지 |
 | dropship-crawler EC2 (52.79.x.x) | 한국 IP → 미국 Proxy 경유 | 크롤링 전용 |
-| Etsy 셀러 계정 접속 | 미국 Residential IP | 가입·운영 동일 IP 유지 필수 |
+| Etsy 셀러 계정 접속 | 미국 집 IP (동부) | 당분간 집 IP 사용 |
+| **Etsy 접속 (5월 한국 출국 전)** | Webshare Static $6/월 구매 예정 | 출국 2주 전 설정 필요 |
 | 스마트스토어·쿠팡 | 한국 IP | 별도 관리 |
+
+---
+
+## 🌐 Proxy 현황
+| 서비스 | 용도 | 상태 | 비용 |
+|---|---|---|---|
+| Webshare Rotating Residential | EC2 크롤링 전용 (US IP 10개) | ✅ 활성 | $3.50/월 |
+| Webshare Static Residential | Etsy 계정 고정 IP | ⬜ 5월 출국 전 구매 예정 | $6/월 예정 |
 
 ---
 
 ## 🕷️ 크롤러 현황
 | 크롤러 | 상태 | 비고 |
 |---|---|---|
-| eBay Sold 크롤러 v2 | ✅ 완료 | Playwright / Akamai 봇감지 우회 완료 |
-| 수집 데이터 | ✅ | 540개 수집 → 515개 정합성 검증 완료 |
-| Google Sheets 연동 | ✅ 완료 | service_account.json 로컬 보관 |
-| EC2 배포 (scp) | 🔴 Day 2 예정 | 로컬 → EC2 업로드 필요 |
-| Residential Proxy 연동 | 🔴 Day 2 예정 | 크롤러에 프록시 설정 추가 필요 |
-| GitHub Actions cron | ⬜ 대기 | Day 2 예정 (KST 06:00 / 18:00) |
-| Amazon 크롤러 | ⬜ 대기 | Day 2 시작 예정 / IP 차단 HIGH 주의 |
-| TikTok 크롤러 | ⬜ 대기 | |
+| eBay Sold 크롤러 v2 | ✅ 운영 중 | ⚠️ 스폰서 필터 버그 / 배송비 파싱 오류 — P2 수정 중 |
+| Amazon 베스트셀러 크롤러 v1.0 | ✅ 운영 중 | ⚠️ 순위변동 NULL — P2 재수집 예정 |
+| GitHub Actions cron | ✅ 완료 | KST 06:00 / 18:00 자동 실행 |
+| TikTok 크롤러 | ⬜ Day 4 예정 | |
 | 브랜드공홈 크롤러 | ⬜ 대기 | |
-| Slack/카카오 알림 | ⬜ 대기 | |
+| Slack/카카오 알림 | ⬜ Day 4 예정 | |
+
+---
+
+## 📦 수집 데이터 현황
+| 소스 | 수집량 | 저장소 | 상태 |
+|---|---|---|---|
+| eBay Sold | 3,490행 | Google Sheets `eBay_Sold_DB` | ✅ 자동수집 중 (스폰서 필터 수정 예정) |
+| Amazon 홈데코 | 60개 | `Amazon_홈데코` | ✅ (순위변동 NULL 수정 예정) |
+| Amazon 반려동물 | 60개 | `Amazon_반려동물` | ✅ |
+| Amazon 주방용품 | 50개 | `Amazon_주방용품` | ✅ |
+| **합계** | **3,660개** | | |
+
+---
+
+## 🏆 위닝 상품 현황 (Day 3 확정)
+
+| 순위 | 상품명 | 마진율 | 소싱처 | 리스팅 상태 |
+|---|---|---|---|---|
+| 1 | Howard Miller Loman Mantel Clock | 54.4% | Faire | ⬜ P4 착수 예정 |
+| 2 | Frankenstein Bride Wall Decor | 49.9% | Spocket/Faire | ⬜ P4 착수 예정 |
+| 3 | Global Views Calisto Head Vase | 56.4% | Global Views 직접 | ⬜ 48h 재고 확인 후 착수 |
+
+**평균 마진율: 43.1%** (목표 25% 대비 초과 달성)
+
+> ⚠️ 주의: 스폰서=Y 데이터 기반 선정 — 실수요 과대평가 가능성 있음. 리스팅 후 반응 모니터링 필수.
 
 ---
 
@@ -80,11 +108,11 @@
 ## 📊 KPI 현황
 | 지표 | 목표 (M4) | 현재 | 판정 |
 |---|---|---|---|
-| 크롤링 소스 가동 | 4개 | 1개 (eBay) | 🟡 진행중 |
+| 크롤링 소스 가동 | 4개 | 2개 (eBay+Amazon) | 🟡 진행중 |
 | 데이터 정합성 | 95%+ | 96.7% | ✅ 통과 |
-| Etsy 리스팅 | 10개+ | 0개 | ⬜ 미시작 |
+| Etsy 리스팅 | 10개+ | 0개 | ⬜ **Day 4 P4 착수** |
 | 월 주문 | 30건 | 0건 | ⬜ 미시작 |
-| 위닝 상품 확정 | 3개 | 0개 | ⬜ 미시작 |
+| 위닝 상품 확정 | 3개 | **3개** | ✅ **달성** |
 | 사업자 등록 | 완료 | 미완료 | ⬜ 미시작 |
 
 ---
@@ -92,27 +120,38 @@
 ## 🛒 채널 현황
 | 채널 | 상태 | 진입 조건 |
 |---|---|---|
-| Etsy US | ⬜ 미개설 | Residential Proxy IP로 가입 필요 |
+| Etsy US | ⬜ **계정 개설 필요** | Day 4 최우선 — 집 IP로 즉시 개설 |
 | 스마트스토어 | ⬜ Phase 2 | Etsy 월 주문 30건 + 위닝 3개 달성 후 |
 | 쿠팡 | ⬜ Phase 3 | 스마트스토어 월 주문 50건 달성 후 |
 
 ---
 
-## 📅 Day 2 우선순위
-1. 🔴 미국 Residential Proxy 서비스 선정 및 EC2 연동
-2. 🔴 로컬 크롤러 → EC2 scp 업로드
-3. 🔴 EC2 + Proxy 환경에서 크롤러 실행 테스트
-4. ⬜ GitHub Actions cron 설정
-5. ⬜ Amazon 크롤러 작성 시작
+## 📅 Day 4 우선순위
+1. 🔴 **Etsy 계정 개설** (집 IP로 즉시) — 리스팅 선행 조건
+2. 🔴 **P4** — 위닝 #1 #2 Etsy 리스팅 즉시 착수
+3. 🔴 **P2** — 크롤러 3개 이슈 수정 (스폰서 필터 / 배송비 파싱 / Amazon 순위변동)
+4. 🟡 **P4** — 위닝 #3 Global Views 재고 확인 후 리스팅
+
+---
+
+## 💸 월 지출 현황
+| 항목 | 비용 |
+|---|---|
+| Claude Pro | $20/월 |
+| Webshare Rotating | $3.50/월 |
+| Webshare Static (예정) | $6/월 (5월~) |
+| AWS EC2 dropship-crawler | ~$8~10/월 |
+| **합계** | **~$32/월** |
 
 ---
 
 ## ⚠️ 보안 원칙 (절대 준수)
 - 크롤러 실행: EC2(52.79.177.182) + 미국 Proxy 경유만 허용
-- 로컬 PC 크롤러 직접 실행 금지 (키움 API IP 혼용 위험)
+- 로컬 PC 크롤러 직접 실행 금지
 - `service_account.json` → GitHub 업로드 금지
 - `ktrader-key.pem` → GitHub 업로드 금지
-- K-Trader EC2와 dropship-crawler EC2 혼용 절대 금지
+- Webshare 크리덴셜 → .env 파일 관리, GitHub 업로드 금지
+- GitHub Personal Access Token → 채팅에 절대 입력 금지
 
 ---
 
