@@ -30,7 +30,11 @@ jobs:
       - name: 의존성 설치
         run: |
           pip install -r requirements_spocket.txt
-          playwright install chromium --with-deps
+          # Ubuntu 24.04 libasound2 패키지명 변경 대응
+          sudo apt-get install -y libasound2t64
+          sudo ln -sf /usr/lib/x86_64-linux-gnu/libasound.so.2 /usr/lib/x86_64-linux-gnu/libasound.so.2.0.0 || true
+          playwright install chromium
+          playwright install-deps chromium
           
       # ── service_account.json 복원 (GitHub Secret → 파일) ──
       - name: service_account.json 생성
