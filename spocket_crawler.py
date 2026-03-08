@@ -273,8 +273,12 @@ async def spocket_login(page: Page) -> bool:
 
     logger.info("🔐 Spocket 로그인 시도 중...")
     try:
-        await page.goto(CONFIG["LOGIN_URL"], wait_until="networkidle", timeout=30000)
-        await asyncio.sleep(random.uniform(2, 4))
+        # networkidle → domcontentloaded (React SPA 무한대기 방지)
+        await page.goto(CONFIG["LOGIN_URL"], wait_until="domcontentloaded", timeout=60000)
+        await asyncio.sleep(random.uniform(3, 5))
+
+        logger.info(f"  현재 URL: {page.url}")
+        await page.screenshot(path="spocket_after_goto.png")
 
         # 이메일 입력
         email_sel = 'input[type="email"], input[name="email"], #email, [placeholder*="email"]'
@@ -288,7 +292,8 @@ async def spocket_login(page: Page) -> bool:
         await asyncio.sleep(random.uniform(0.5, 1.2))
 
         # 로그인 버튼 클릭
-        btn_sel = 'button[type="submit"], button:has-text("Log in"), button:has-text("Sign in")'
+        btn_sel = 'button[type="submit"], button:has-text("Log in"), button:has-text("Sign in"), button:has-text("Login")'
+        await page.wait_for_selector(btn_sel, timeout=15000)
         await page.click(btn_sel)
 
         # 대시보드 이동 확인
