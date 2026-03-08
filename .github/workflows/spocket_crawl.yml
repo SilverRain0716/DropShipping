@@ -30,9 +30,8 @@ jobs:
       - name: 의존성 설치
         run: |
           pip install -r requirements_spocket.txt
-          playwright install chromium
-          playwright install-deps chromium
-
+          playwright install chromium --with-deps
+          
       # ── service_account.json 복원 (GitHub Secret → 파일) ──
       - name: service_account.json 생성
         run: echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > service_account.json
