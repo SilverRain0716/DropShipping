@@ -47,7 +47,7 @@ jobs:
           SPOCKET_EMAIL=${{ secrets.SPOCKET_EMAIL }}
           SPOCKET_PASSWORD=${{ secrets.SPOCKET_PASSWORD }}
           SHEET_ID=${{ secrets.SHEET_ID }}
-          SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL }}
           EOF
 
       - name: Spocket 크롤러 실행

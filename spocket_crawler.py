@@ -94,7 +94,7 @@ SPOCKET_EMAIL    = os.environ.get("SPOCKET_EMAIL",    "")
 SPOCKET_PASSWORD = os.environ.get("SPOCKET_PASSWORD", "")
 
 # Slack 웹훅 (선택)
-SLACK_WEBHOOK_URL = os.environ.get("SLACK_WEBHOOK_URL", "")
+DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 
 # 10개 프록시 풀 생성
 PROXY_LIST = [
@@ -613,9 +613,9 @@ def save_to_sheets(data: list[dict]) -> bool:
 # ──────────────────────────────────────────────
 # Slack 알림
 # ──────────────────────────────────────────────
-def send_slack(products: list[dict], success: bool) -> None:
-    """Slack 웹훅으로 수집 결과 전송. SLACK_WEBHOOK_URL 미설정 시 건너뜀."""
-    if not SLACK_WEBHOOK_URL:
+def send_discord(products: list[dict], success: bool) -> None:
+    """Discord 웹훅으로 수집 결과 전송. DISCORD_WEBHOOK_URL 미설정 시 건너뜀."""
+    if not DISCORD_WEBHOOK_URL:
         return
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M KST")
@@ -635,13 +635,13 @@ def send_slack(products: list[dict], success: bool) -> None:
         msg = f"❌ *Spocket 크롤러 실패/결과 없음* ({now}) — 로그 확인 필요"
 
     try:
-        res = requests.post(SLACK_WEBHOOK_URL, json={"text": msg}, timeout=10)
-        if res.status_code == 200:
-            logger.info("✅ Slack 알림 전송 완료")
+        res = requests.post(DISCORD_WEBHOOK_URL, json={"content": msg}, timeout=10)
+        if res.status_code in (200, 204):
+            logger.info("✅ Discord 알림 전송 완료")
         else:
-            logger.warning(f"Slack 응답 이상: {res.status_code}")
+            logger.warning(f"Discord 응답 이상: {res.status_code}")
     except Exception as e:
-        logger.error(f"Slack 알림 실패: {e}")
+        logger.error(f"Discord 알림 실패: {e}")
 
 
 # ──────────────────────────────────────────────
@@ -678,7 +678,7 @@ async def main():
         if not login_ok:
             logger.error("❌ 로그인 3회 모두 실패 — 크롤러 중단")
             await browser.close()
-            send_slack([], success=False)
+            send_discord([], success=False)
             return
 
         # ── 키워드별 수집 ──
@@ -715,7 +715,7 @@ async def main():
         logger.warning("⚠️ 저장할 유효 데이터 없음")
 
     # ── Slack 알림 ──
-    send_slack(validated, success=save_ok)
+    send_discord(validated, success=save_ok)
 
     logger.info(f"🏁 크롤러 종료 | 최종 저장: {len(validated)}개")
 
