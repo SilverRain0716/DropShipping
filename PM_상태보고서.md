@@ -1,7 +1,7 @@
 # 🧠 P1 PM 상태보고서
 > 새 채팅 시작 시 이 파일을 P1에 업로드하면 컨텍스트 즉시 복원됩니다.
 
-업데이트: 2026-03-07 (Day 4 완료 / 채널 전략 수정 — Amazon FBM 추가)
+업데이트: 2026-03-08 (Day 5 완료 / Spocket 위닝 상품 크롤러 추가)
 
 ---
 
@@ -72,9 +72,10 @@
 | eBay Sold 크롤러 v2 | ✅ 운영 중 | 스폰서 필터 제거 / 배송비 파싱 수정 완료 |
 | Amazon 베스트셀러 v1.0 | ✅ 운영 중 | 순위변동 None 처리 / 홈데코 타임아웃 모니터링 |
 | GitHub Actions cron | ✅ 완료 | KST 06:00 / 18:00 자동 실행 |
-| TikTok 크롤러 | ⬜ Day 5 착수 | |
+| Spocket 위닝 크롤러 v1.0 | ✅ 완성 | spocket_crawler.py / cron KST 07:00 / 셀렉터 검증 필요 |
+| TikTok 크롤러 | ⬜ Day 6 착수 | |
 | 브랜드공홈 크롤러 | ⬜ 대기 | |
-| Slack/카카오 알림 | ⬜ Day 5 예정 | |
+| Slack/카카오 알림 | 🟡 Spocket 연동 완료 | TikTok·eBay·Amazon은 Day 6 예정 |
 
 ---
 
@@ -148,12 +149,13 @@
 
 ---
 
-## 📅 Day 5 우선순위
+## 📅 Day 6 우선순위
 1. 🔴 Etsy 신원인증 완료 확인 → 즉시 라이브
 2. 🔴 Amazon Individual 셀러 계정 개설
 3. 🔴 P4 — Amazon FBM 리스팅 초안 작성 (#1 #2)
-4. 🟡 P2 — TikTok Shop 크롤러 개발
-5. 🟡 P2 — Slack/카카오 알림 웹훅
+4. 🔴 P2 — Spocket 크롤러 EC2 배포 + 셀렉터 검증 (첫 실행)
+5. 🟡 P2 — TikTok Shop 크롤러 개발
+6. 🟡 P2 — eBay·Amazon 크롤러 Slack 알림 연동
 
 ---
 

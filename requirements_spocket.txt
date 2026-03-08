@@ -1,0 +1,9 @@
+# Spocket 위닝 상품 크롤러 의존성
+# 설치: pip install -r requirements_spocket.txt
+# Playwright 브라우저: playwright install chromium
+
+playwright==1.44.0
+gspread==6.1.2
+google-auth==2.29.0
+python-dotenv==1.0.1
+requests==2.31.0

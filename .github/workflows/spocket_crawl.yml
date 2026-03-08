@@ -1,0 +1,72 @@
+name: Spocket 위닝 상품 자동 수집
+
+# ⚠️ 이 워크플로우는 크롤러 전용 환경에서만 실행됩니다.
+# ⚠️ 판매 계정(Etsy/Amazon FBM)과 동일 IP 혼용 절대 금지.
+
+on:
+  # KST 07:00 = UTC 22:00 (전날)
+  schedule:
+    - cron: "0 22 * * *"
+
+  # 수동 실행 (디버깅 / 긴급 재실행)
+  workflow_dispatch:
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Python 3.11 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: 의존성 설치
+        run: |
+          pip install -r requirements_spocket.txt
+          playwright install chromium
+          playwright install-deps chromium
+
+      # ── service_account.json 복원 (GitHub Secret → 파일) ──
+      - name: service_account.json 생성
+        run: echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > service_account.json
+
+      # ── .env 파일 생성 ──
+      - name: .env 파일 생성
+        run: |
+          cat <<EOF > .env
+          PROXY_HOST=${{ secrets.PROXY_HOST }}
+          PROXY_PORT=${{ secrets.PROXY_PORT }}
+          PROXY_USER_BASE=${{ secrets.PROXY_USER_BASE }}
+          PROXY_PASSWORD=${{ secrets.PROXY_PASSWORD }}
+          SPOCKET_EMAIL=${{ secrets.SPOCKET_EMAIL }}
+          SPOCKET_PASSWORD=${{ secrets.SPOCKET_PASSWORD }}
+          SHEET_ID=${{ secrets.SHEET_ID }}
+          SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}
+          EOF
+
+      - name: Spocket 크롤러 실행
+        run: python spocket_crawler.py
+
+      # ── 로그 아티팩트 업로드 (7일 보관) ──
+      - name: 로그 업로드
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spocket-log-${{ github.run_id }}
+          path: spocket_crawler.log
+          retention-days: 7
+
+      # ── 에러 스크린샷 업로드 ──
+      - name: 에러 스크린샷 업로드
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: error-screenshot-${{ github.run_id }}
+          path: "*.png"
+          retention-days: 3
