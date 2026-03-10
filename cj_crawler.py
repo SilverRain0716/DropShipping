@@ -231,12 +231,18 @@ def get_access_token(session: requests.Session) -> Optional[str]:
         return None
 
     # ✅ 올바른 인증 payload — password 필드 사용 (apiKey 사용 시 code:1600005 오류)
-    payload = {"email": CJ_EMAIL, "password": CJ_PASSWORD}
+    # apiKey 방식 (프록시 우회 시 정상 동작 확인됨 2026-03-10)
+    payload = {"apiKey": os.environ.get("CJ_API_KEY", "")}
 
     for attempt in range(1, CONFIG["RETRY_COUNT"] + 1):
         try:
             logger.info(f"🔑 CJ API 토큰 발급 시도 ({attempt}/{CONFIG['RETRY_COUNT']})...")
-            resp = session.post(CONFIG["CJ_TOKEN_URL"], json=payload, timeout=15)
+            resp = requests.post(
+                CONFIG["CJ_TOKEN_URL"],
+                json=payload,
+                timeout=15,
+                proxies={"http": None, "https": None},  # 프록시 우회
+            )
             resp.raise_for_status()
             data = resp.json()
 
