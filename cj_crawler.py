@@ -281,7 +281,7 @@ def fetch_product_page(
     params  = {
         "pageNum":         page,
         "pageSize":        CONFIG["PAGE_SIZE"],
-        "categoryKeyword": category,
+        "productNameEn": category,
     }
 
     # 랜덤 딜레이 (서버 부하 방지 + IP 차단 우회)
