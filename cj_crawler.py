@@ -377,7 +377,11 @@ def process_product(
     조건 미달 시 None 반환
     """
     try:
-        sell_price    = float(raw.get("sellPrice") or 0)
+       # 범위형 가격 처리 ("28.63 -- 31.81" → 28.63)
+        raw_price = str(raw.get("sellPrice") or "0")
+        if "--" in raw_price:
+            raw_price = raw_price.split("--")[0].strip()
+        sell_price = float(raw_price)
         suggest_price = float(raw.get("suggestSellingPrice") or 0)
         inventory     = int(raw.get("inventory") or 0)
         product_id    = raw.get("pid", "")
