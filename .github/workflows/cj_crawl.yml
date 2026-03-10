@@ -1,20 +1,8 @@
-# .github/workflows/cj_crawl.yml
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# CJ Dropshipping 크롤러 자동 실행 스케줄
-# 실행 시각: KST 07:00 = UTC 22:00 (전날)
-#
-# ⚠️ GitHub Actions Runner IP ≠ 판매 계정 IP (자동 분리)
-# ⚠️ Webshare Rotating Proxy 경유로 2중 IP 분리
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-name: 🕷️ CJ Dropshipping 크롤러
+name: CJ Dropshipping Crawler
 
 on:
-  # KST 07:00 = UTC 22:00 (전날)
   schedule:
     - cron: "0 22 * * *"
-
-  # 수동 트리거 (Actions 탭에서 직접 실행 가능)
   workflow_dispatch:
 
 jobs:
@@ -24,39 +12,30 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      # 1. 소스 체크아웃
-      - name: 📥 코드 체크아웃
+      - name: 코드 체크아웃
         uses: actions/checkout@v4
 
-      # 2. Python 3.11 설정
-      - name: 🐍 Python 3.11 설정
+      - name: Python 3.11 설정
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
           cache-dependency-path: requirements_cj.txt
 
-      # 3. 패키지 설치
-      - name: 📦 패키지 설치
+      - name: 패키지 설치
         run: |
           pip install --upgrade pip
           pip install -r requirements_cj.txt
 
-      # 4. GCP 서비스 계정 JSON 복원
-      #    GitHub Secret: GCP_SA_KEY_B64 (base64 인코딩된 service_account.json)
-      #    인코딩 방법: base64 -w0 service_account.json
-      - name: 🔑 GCP 인증 파일 복원
+      - name: GCP 인증 파일 복원
         run: |
           echo "${{ secrets.GCP_SA_KEY_B64 }}" | base64 -d > service_account.json
 
-      # 5. CJ 크롤러 실행
-      #    ⚠️ 판매 계정과 IP 완전 분리:
-      #       GitHub Actions 자체 IP + Webshare Proxy 2중 적용
-      - name: 🕷️ CJ 크롤러 실행
+      - name: CJ 크롤러 실행
         env:
           CJ_EMAIL:            ${{ secrets.CJ_EMAIL }}
           CJ_PASSWORD:         ${{ secrets.CJ_PASSWORD }}
-	      CJ_API_KEY:          ${{ secrets.CJ_API_KEY }}
+          CJ_API_KEY:          ${{ secrets.CJ_API_KEY }}
           SHEET_ID:            ${{ secrets.SHEET_ID }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           PROXY_HOST:          ${{ secrets.PROXY_HOST }}
@@ -66,8 +45,7 @@ jobs:
           GOOGLE_SA_KEY_PATH:  service_account.json
         run: python cj_crawler.py
 
-      # 6. 로그 아티팩트 저장 (7일 보관)
-      - name: 📋 로그 업로드
+      - name: 로그 업로드
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -75,7 +53,6 @@ jobs:
           path: cj_crawler.log
           retention-days: 7
 
-      # 7. 인증 파일 삭제 (보안 정리)
-      - name: 🔒 인증 파일 정리
+      - name: 인증 파일 정리
         if: always()
         run: rm -f service_account.json
