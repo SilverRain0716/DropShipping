@@ -387,9 +387,9 @@ def process_product(
         if not (CONFIG["PRICE_MIN"] <= sell_price <= CONFIG["PRICE_MAX"]):
             return None
 
-        # ── 재고 필터
-        if inventory <= 0:
-            return None
+        # # ── 재고 필터
+        # if inventory <= 0:
+        #     return None
 
         # ── 정가: suggestSellingPrice 없으면 sellPrice * 2.5
         if suggest_price <= 0:
