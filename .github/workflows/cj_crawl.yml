@@ -56,7 +56,7 @@ jobs:
         env:
           CJ_EMAIL:            ${{ secrets.CJ_EMAIL }}
           CJ_PASSWORD:         ${{ secrets.CJ_PASSWORD }}
-	  CJ_API_KEY:          ${{ secrets.CJ_API_KEY }}
+	      CJ_API_KEY:          ${{ secrets.CJ_API_KEY }}
           SHEET_ID:            ${{ secrets.SHEET_ID }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           PROXY_HOST:          ${{ secrets.PROXY_HOST }}
