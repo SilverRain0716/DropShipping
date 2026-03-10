@@ -1,19 +1,10 @@
 # requirements_cj.txt
-# CJ Dropshipping 크롤러 의존성 패키지
+# CJ Dropshipping 크롤러 의존성
 # 설치: pip install -r requirements_cj.txt
-# 가상환경 권장: python -m venv .venv && source .venv/bin/activate
 
-# ── HTTP 요청
 requests==2.32.3
 urllib3==2.2.1
-
-# ── 환경 변수 관리
 python-dotenv==1.0.1
-
-# ── Google Sheets 연동
 gspread==6.1.2
 google-auth==2.29.0
 google-auth-oauthlib==1.2.0
-
-# ── 유틸리티
-tenacity==8.3.0     # 재시도 데코레이터 (선택 사용)
