@@ -218,11 +218,19 @@ def get_access_token(session: requests.Session) -> Optional[str]:
     Body: {"email": CJ_EMAIL, "password": CJ_PASSWORD}
     → accessToken 반환 (유효시간 12시간)
     실패 시 None 반환
+
+    ⚠️ 인증 방식 주의:
+    - 올바름: {"email": ..., "password": ...}   ← CJ_PASSWORD Secret 사용
+    - 잘못됨: {"email": ..., "apiKey": ...}     ← code:1600005 오류 발생
+    CJ_API_KEY Secret이 아닌 CJ_PASSWORD Secret을 반드시 사용할 것
     """
     if not CJ_EMAIL or not CJ_PASSWORD:
         logger.error("❌ CJ_EMAIL / CJ_PASSWORD .env 미설정")
+        logger.error("   → GitHub Secrets: CJ_EMAIL, CJ_PASSWORD 등록 필요")
+        logger.error("   → CJ_API_KEY Secret은 이 크롤러에서 사용하지 않음")
         return None
 
+    # ✅ 올바른 인증 payload — password 필드 사용 (apiKey 사용 시 code:1600005 오류)
     payload = {"email": CJ_EMAIL, "password": CJ_PASSWORD}
 
     for attempt in range(1, CONFIG["RETRY_COUNT"] + 1):
