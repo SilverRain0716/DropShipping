@@ -181,13 +181,13 @@ def build_session(proxy: dict) -> requests.Session:
     session.mount("https://", adapter)
     session.mount("http://", adapter)
 
-    # Proxy 적용
-    proxy_url = (
-        f"http://{proxy['username']}:{proxy['password']}@"
-        f"{PROXY_HOST}:{PROXY_PORT}"
-    )
-    session.proxies = {"http": proxy_url, "https": proxy_url}
-
+    # Proxy 비활성화 (Webshare 대역폭 소진, CJ 공식 API는 프록시 불필요)
+    # proxy_url = (
+    #     f"http://{proxy['username']}:{proxy['password']}@"
+    #     f"{PROXY_HOST}:{PROXY_PORT}"
+    # )
+    # session.proxies = {"http": proxy_url, "https": proxy_url}
+    
     # User-Agent 로테이션 (IP 차단 우회)
     session.headers.update({
         "User-Agent":   random.choice(USER_AGENTS),
