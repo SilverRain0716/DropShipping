@@ -11,51 +11,51 @@ on:
 
 jobs:
   list:
-    name: 스마트스토어 자동 리스팅
+    name: 스마트스토어 자동 리스팅 (EC2)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
-      - name: 코드 체크아웃
-        uses: actions/checkout@v4
-
-      - name: Python 3.11 설정
-        uses: actions/setup-python@v5
+      # ⚠️ GitHub Actions runner IP는 매번 변경됨 (Azure 랜덤)
+      # 네이버 커머스 API는 IP 화이트리스트 필수 → 0.0.0.0/0 허용 불가
+      # ✅ 해결: EC2 고정 IP(52.79.177.182)에서 SSH 실행
+      - name: EC2 SSH 접속 후 스마트스토어 리스팅 실행
+        uses: appleboy/ssh-action@v1.0.0
         with:
-          python-version: "3.11"
-          cache: "pip"
-          cache-dependency-path: requirements_smartstore.txt
+          host: 52.79.177.182
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 25m
+          script: |
+            cd ~/dropship-crawler
 
-      - name: 패키지 설치
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements_smartstore.txt
+            # 최신 코드 pull
+            git pull origin main
 
-      - name: GCP 인증 파일 복원
-        run: |
-          echo "${{ secrets.GCP_SA_KEY_B64 }}" | base64 -d > service_account.json
+            # venv 활성화
+            source venv/bin/activate
 
-      - name: 스마트스토어 자동 리스팅 실행
-        env:
-          NAVER_CLIENT_ID:      ${{ secrets.NAVER_CLIENT_ID }}
-          NAVER_CLIENT_SECRET:  ${{ secrets.NAVER_CLIENT_SECRET }}
-          CJ_EMAIL:             ${{ secrets.CJ_EMAIL }}
-          CJ_PASSWORD:          ${{ secrets.CJ_PASSWORD }}
-          CJ_API_KEY:           ${{ secrets.CJ_API_KEY }}
-          SHEET_ID:             ${{ secrets.SHEET_ID }}
-          DISCORD_WEBHOOK_URL:  ${{ secrets.DISCORD_WEBHOOK_URL }}
-          GOOGLE_SA_KEY_PATH:   service_account.json
-        run: python smartstore_lister.py
+            # 신규 패키지 설치 (requirements_smartstore.txt)
+            pip install -r requirements_smartstore.txt -q
 
-      - name: 로그 업로드
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: smartstore-log-${{ github.run_id }}
-          path: smartstore_lister.log
-          retention-days: 7
+            # GCP 인증 파일 확인
+            if [ ! -f service_account.json ]; then
+              echo "ERROR: service_account.json 없음"
+              exit 1
+            fi
 
-      - name: 인증 파일 정리
-        if: always()
-        run: rm -f service_account.json
+            # 환경변수 주입 후 실행
+            export NAVER_CLIENT_ID="${{ secrets.NAVER_CLIENT_ID }}"
+            export NAVER_CLIENT_SECRET="${{ secrets.NAVER_CLIENT_SECRET }}"
+            export CJ_EMAIL="${{ secrets.CJ_EMAIL }}"
+            export CJ_PASSWORD="${{ secrets.CJ_PASSWORD }}"
+            export CJ_API_KEY="${{ secrets.CJ_API_KEY }}"
+            export SHEET_ID="${{ secrets.SHEET_ID }}"
+            export DISCORD_WEBHOOK_URL="${{ secrets.DISCORD_WEBHOOK_URL }}"
+            export GOOGLE_SA_KEY_PATH="service_account.json"
+
+            mkdir -p ~/logs
+            python smartstore_lister.py 2>&1 | tee ~/logs/smartstore.log
+            echo "--- 실행 완료 (마지막 20줄) ---"
+            tail -20 ~/logs/smartstore.log
