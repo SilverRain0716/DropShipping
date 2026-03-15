@@ -1,0 +1,61 @@
+name: Smartstore Auto Lister
+
+on:
+  # CJ 크롤러 완료 후 자동 트리거
+  workflow_run:
+    workflows: ["CJ Dropshipping Crawler"]
+    types: [completed]
+
+  # 수동 트리거
+  workflow_dispatch:
+
+jobs:
+  list:
+    name: 스마트스토어 자동 리스팅
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Python 3.11 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements_smartstore.txt
+
+      - name: 패키지 설치
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements_smartstore.txt
+
+      - name: GCP 인증 파일 복원
+        run: |
+          echo "${{ secrets.GCP_SA_KEY_B64 }}" | base64 -d > service_account.json
+
+      - name: 스마트스토어 자동 리스팅 실행
+        env:
+          NAVER_CLIENT_ID:      ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET:  ${{ secrets.NAVER_CLIENT_SECRET }}
+          CJ_EMAIL:             ${{ secrets.CJ_EMAIL }}
+          CJ_PASSWORD:          ${{ secrets.CJ_PASSWORD }}
+          CJ_API_KEY:           ${{ secrets.CJ_API_KEY }}
+          SHEET_ID:             ${{ secrets.SHEET_ID }}
+          DISCORD_WEBHOOK_URL:  ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GOOGLE_SA_KEY_PATH:   service_account.json
+        run: python smartstore_lister.py
+
+      - name: 로그 업로드
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartstore-log-${{ github.run_id }}
+          path: smartstore_lister.log
+          retention-days: 7
+
+      - name: 인증 파일 정리
+        if: always()
+        run: rm -f service_account.json
