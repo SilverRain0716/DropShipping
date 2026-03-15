@@ -186,8 +186,30 @@ def get_naver_token() -> Optional[str]:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # [2] CJ API 토큰 발급
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CJ_TOKEN_CACHE_FILE = Path(__file__).parent / ".cj_token_cache"
+
 def get_cj_token() -> Optional[str]:
-    """CJ API 액세스 토큰 발급 (apiKey 방식)"""
+    """
+    CJ API 액세스 토큰 발급 (apiKey 방식)
+    ✅ 토큰 파일 캐싱: 유효한 토큰이 있으면 재발급하지 않음
+    → 429 Rate Limit 방지
+    토큰 유효시간: 12시간 (보수적으로 11시간 캐시)
+    """
+    import json as _json
+
+    # 캐시 확인
+    if CJ_TOKEN_CACHE_FILE.exists():
+        try:
+            cache = _json.loads(CJ_TOKEN_CACHE_FILE.read_text())
+            token     = cache.get("token", "")
+            cached_at = cache.get("cached_at", 0)
+            # 11시간(39600초) 이내면 재사용
+            if token and (time.time() - cached_at) < 39600:
+                logger.info(f"✅ CJ 토큰 캐시 사용 (발급 후 {int(time.time()-cached_at)//60}분 경과)")
+                return token
+        except Exception:
+            pass
+
     api_key = CJ_API_KEY
     if not api_key:
         logger.error("❌ CJ_API_KEY 미설정")
@@ -203,12 +225,27 @@ def get_cj_token() -> Optional[str]:
                 timeout=15,
                 proxies={"http": None, "https": None},
             )
+
+            # 429 Rate Limit → 길게 대기 후 재시도
+            if resp.status_code == 429:
+                wait = 60 * attempt
+                logger.warning(f"⚠️ CJ API Rate Limit (429) — {wait}초 대기 후 재시도...")
+                time.sleep(wait)
+                continue
+
             resp.raise_for_status()
             data = resp.json()
 
             if data.get("result") is True:
                 token = data["data"]["accessToken"]
                 logger.info("✅ CJ 토큰 발급 성공")
+                # 캐시 저장
+                try:
+                    CJ_TOKEN_CACHE_FILE.write_text(
+                        _json.dumps({"token": token, "cached_at": time.time()})
+                    )
+                except Exception:
+                    pass
                 return token
             else:
                 logger.error(f"❌ CJ 토큰 API 오류: {data.get('message')} (code: {data.get('code')})")
