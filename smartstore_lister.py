@@ -262,20 +262,15 @@ def get_cj_token() -> Optional[str]:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # [3] CJ 상품 이미지 URL 실조회 — 핵심 버그픽스
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-def get_cj_product_image(pid: str, cj_token: str) -> str:
+def get_cj_product_data(pid: str, cj_token: str) -> tuple[str, dict]:
     """
-    CJ API /product/query?pid= 로 실제 productImage URL 조회
-    
-    ⚠️ 버그 원인: pid로 이미지 URL 추정 생성 → 실제 URL 형식과 불일치
-    ✅ 해결: 이 함수로 실제 URL 직접 조회
-    
-    반환 우선순위:
-    1. productImage (대표 이미지)
-    2. productImageSet[0].imageUrl (이미지 세트 첫 번째)
-    3. "" (조회 실패 시)
+    CJ API /product/query?pid= 로 상품 전체 데이터 조회
+    반환: (image_url, cj_data)
+    image_url: 대표 이미지 URL (없으면 "")
+    cj_data: 상품 전체 dict (상세페이지 생성에 활용)
     """
     if not pid or not cj_token:
-        return ""
+        return "", {}
 
     try:
         resp = requests.get(
@@ -291,31 +286,34 @@ def get_cj_product_image(pid: str, cj_token: str) -> str:
         if data.get("result") is True and data.get("data"):
             product = data["data"]
 
-            # 1순위: productImage
+            # 대표 이미지: productImage 우선, 없으면 imageSet[0]
             image_url = product.get("productImage", "")
-            if image_url and image_url.startswith("http"):
-                logger.debug(f"   이미지 URL 조회 성공 (productImage): {image_url[:60]}")
-                return image_url
+            if not (image_url and image_url.startswith("http")):
+                image_set = product.get("productImageSet", [])
+                if image_set and isinstance(image_set, list):
+                    first = image_set[0]
+                    image_url = first.get("imageUrl", "") if isinstance(first, dict) else ""
 
-            # 2순위: productImageSet 첫 번째
-            image_set = product.get("productImageSet", [])
-            if image_set and isinstance(image_set, list):
-                first = image_set[0]
-                url = first.get("imageUrl", "") if isinstance(first, dict) else ""
-                if url and url.startswith("http"):
-                    logger.debug(f"   이미지 URL 조회 성공 (imageSet[0]): {url[:60]}")
-                    return url
+            if image_url:
+                logger.debug(f"   이미지 URL: {image_url[:60]}")
+            else:
+                logger.warning(f"   ⚠️ pid={pid} 이미지 없음. 필드: {list(product.keys())}")
 
-            logger.warning(f"   ⚠️ pid={pid} 이미지 필드 없음. 응답: {list(product.keys())}")
-            return ""
+            return image_url, product
 
         else:
             logger.warning(f"   ⚠️ CJ product/query 실패 pid={pid}: {data.get('message')}")
-            return ""
+            return "", {}
 
     except Exception as e:
-        logger.warning(f"   ⚠️ CJ 이미지 조회 예외 pid={pid}: {e}")
-        return ""
+        logger.warning(f"   ⚠️ CJ 상품 조회 예외 pid={pid}: {e}")
+        return "", {}
+
+
+# 하위 호환용 alias
+def get_cj_product_image(pid: str, cj_token: str) -> str:
+    url, _ = get_cj_product_data(pid, cj_token)
+    return url
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -430,24 +428,97 @@ def make_product_name(en_name: str, category: str) -> str:
     return full_name[:100]
 
 
-def make_detail_content(product_name: str, sourcing_usd: float, category: str) -> str:
-    """상품 상세 HTML 설명 생성"""
-    return f"""
-<div style="text-align:center; font-family: Arial, sans-serif; padding: 20px;">
-  <h2 style="color:#333;">{product_name}</h2>
-  <p style="color:#666; font-size:14px;">
-    고품질 {category} 제품입니다.<br>
-    주문 후 7~14일 내 배송됩니다.<br>
-    상품 관련 문의는 고객센터를 이용해 주세요.
-  </p>
-  <hr/>
-  <p style="color:#999; font-size:12px;">
-    ※ 상품 이미지는 실제와 다소 차이가 있을 수 있습니다.<br>
-    ※ 해외 소싱 상품으로 배송 기간이 다소 소요될 수 있습니다.
-  </p>
-</div>
-""".strip()
+def make_detail_content(product_name, sourcing_usd, category, cj_data=None):
+    """CJ 데이터 활용 풍부한 상세페이지 HTML 생성"""
+    NL = "\n"
 
+    # 이미지 목록 (최대 5장)
+    image_urls = []
+    if cj_data:
+        main_img = cj_data.get("productImage", "")
+        if main_img and main_img.startswith("http"):
+            image_urls.append(main_img)
+        for img in cj_data.get("productImageSet", []):
+            url = img.get("imageUrl", "") if isinstance(img, dict) else ""
+            if url and url.startswith("http") and url not in image_urls:
+                image_urls.append(url)
+            if len(image_urls) >= 5:
+                break
+
+    # 이미지 HTML
+    if image_urls:
+        img_tags = NL.join(
+            '  <img src="' + u + '" style="max-width:600px;width:100%;margin:8px 0;display:block;" />'
+            for u in image_urls
+        )
+        img_html = '<div style="text-align:center;">' + NL + img_tags + NL + '</div>'
+    else:
+        img_html = ""
+
+    # 상품 특징
+    feature_html = ""
+    if cj_data:
+        feature = str(cj_data.get("productFeature", "") or cj_data.get("description", "") or "")
+        if len(feature) > 10:
+            feature_html = (
+                '<div style="margin:20px auto;max-width:600px;padding:16px;'
+                'background:#f9f9f9;border-radius:8px;">'
+                '<h3 style="color:#333;font-size:15px;margin-bottom:8px;">\U0001f4e6 상품 특징</h3>'
+                '<p style="color:#555;font-size:13px;line-height:1.7;">'
+                + feature[:500] + '</p></div>'
+            )
+
+    # 스펙 테이블
+    spec_html = ""
+    if cj_data:
+        w = str(cj_data.get("productWeight", "")).strip()
+        u = str(cj_data.get("productUnit", "")).strip()
+        weight = (w + " " + u).strip() or "-"
+        cat    = cj_data.get("categoryName", category) or category
+        rows = [
+            ("카테고리", cat),
+            ("무게",     weight),
+            ("원산지",   "중국"),
+            ("배송",     "주문 후 7~14일 (해외 배송)"),
+        ]
+        tr_list = []
+        for k, v in rows:
+            if v and v != " " and v != "-":
+                tr_list.append(
+                    '<tr>'
+                    '<td style="padding:8px 12px;background:#f0f0f0;font-weight:bold;width:30%;">' + k + '</td>'
+                    '<td style="padding:8px 12px;">' + v + '</td>'
+                    '</tr>'
+                )
+        if tr_list:
+            spec_html = (
+                '<div style="margin:20px auto;max-width:600px;">'
+                '<h3 style="color:#333;font-size:15px;">\U0001f4cb 상품 정보</h3>'
+                '<table style="width:100%;border-collapse:collapse;font-size:13px;border:1px solid #ddd;">'
+                + NL.join(tr_list) +
+                '</table></div>'
+            )
+
+    # 배송 안내
+    notice_html = (
+        '<div style="margin:20px auto;max-width:600px;padding:12px 16px;'
+        'background:#fff8e1;border-left:4px solid #ffc107;font-size:12px;color:#666;">'
+        '\u203b 해외 직소싱 상품으로 주문 후 <strong>7~14일</strong> 내 배송됩니다.<br>'
+        '\u203b 상품 이미지는 실제와 다소 차이가 있을 수 있습니다.<br>'
+        '\u203b 관세/통관 절차에 따라 배송이 지연될 수 있습니다.'
+        '</div>'
+    )
+
+    parts = [
+        '<div style="font-family:\'Noto Sans KR\',Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px;">',
+        '<h2 style="text-align:center;color:#222;font-size:18px;margin-bottom:16px;">' + product_name + '</h2>',
+        img_html,
+        feature_html,
+        spec_html,
+        notice_html,
+        '</div>',
+    ]
+    return NL.join(p for p in parts if p)
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # [6] pid 추출 (상품URL에서)
@@ -683,9 +754,9 @@ def main():
             update_listing_status(i, "스킵")
             continue
 
-        # ── [핵심] CJ 이미지 URL 실조회
-        logger.info(f"   🖼️  CJ 이미지 URL 조회 중... (pid={pid})")
-        image_url = get_cj_product_image(pid, cj_token)
+        # ── [핵심] CJ 상품 데이터 실조회 (이미지 + 상세페이지용)
+        logger.info(f"   🖼️  CJ 상품 데이터 조회 중... (pid={pid})")
+        image_url, cj_data = get_cj_product_data(pid, cj_token)
 
         if not image_url:
             logger.warning(f"   ⚠️ 이미지 URL 없음 pid={pid} → 스킵")
@@ -694,14 +765,17 @@ def main():
             continue
 
         logger.info(f"   ✅ 이미지 URL: {image_url[:70]}...")
+        extra_imgs = len(cj_data.get("productImageSet", []))
+        if extra_imgs:
+            logger.info(f"   📷 추가 이미지: {extra_imgs}장")
 
         # 판매가 계산
         sale_price = calc_sale_price_krw(sourcing_usd)
         logger.info(f"   💰 판매가: {sale_price:,}원 (소싱가 ${sourcing_usd:.2f})")
 
-        # 상품명 생성
+        # 상품명 + 상세페이지 생성 (CJ 데이터 활용)
         smart_name   = make_product_name(product_name_en, category)
-        detail_html  = make_detail_content(smart_name, sourcing_usd, category)
+        detail_html  = make_detail_content(smart_name, sourcing_usd, category, cj_data)
         logger.info(f"   📝 등록명: {smart_name}")
 
         # 등록 실행
