@@ -87,8 +87,8 @@ CONFIG = {
 }
 
 # 환경변수
-NAVER_CLIENT_ID     = os.environ.get("NAVER_CLIENT_ID", "3fg8lAu90mCfMBjNKIo7GK")
-NAVER_CLIENT_SECRET = os.environ.get("NAVER_CLIENT_SECRET", "$2a$04$F6nD8kGG2.KORgDIkwSXuO")
+NAVER_CLIENT_ID     = os.environ.get("NAVER_CLIENT_ID", "")
+NAVER_CLIENT_SECRET = os.environ.get("NAVER_CLIENT_SECRET", "")
 CJ_EMAIL            = os.environ.get("CJ_EMAIL", "")
 CJ_PASSWORD         = os.environ.get("CJ_PASSWORD", "")
 CJ_API_KEY          = os.environ.get("CJ_API_KEY", "")

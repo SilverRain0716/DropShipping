@@ -46,13 +46,13 @@ jobs:
             fi
 
             # 환경변수 주입 후 실행
-            export NAVER_CLIENT_ID="${{ secrets.NAVER_CLIENT_ID }}"
-            export NAVER_CLIENT_SECRET="${{ secrets.NAVER_CLIENT_SECRET }}"
-            export CJ_EMAIL="${{ secrets.CJ_EMAIL }}"
-            export CJ_PASSWORD="${{ secrets.CJ_PASSWORD }}"
-            export CJ_API_KEY="${{ secrets.CJ_API_KEY }}"
-            export SHEET_ID="${{ secrets.SHEET_ID }}"
-            export DISCORD_WEBHOOK_URL="${{ secrets.DISCORD_WEBHOOK_URL }}"
+            export NAVER_CLIENT_ID='${{ secrets.NAVER_CLIENT_ID }}'
+            export NAVER_CLIENT_SECRET='${{ secrets.NAVER_CLIENT_SECRET }}'
+            export CJ_EMAIL='${{ secrets.CJ_EMAIL }}'
+            export CJ_PASSWORD='${{ secrets.CJ_PASSWORD }}'
+            export CJ_API_KEY='${{ secrets.CJ_API_KEY }}'
+            export SHEET_ID='${{ secrets.SHEET_ID }}'
+            export DISCORD_WEBHOOK_URL='${{ secrets.DISCORD_WEBHOOK_URL }}'
             export GOOGLE_SA_KEY_PATH="service_account.json"
 
             mkdir -p ~/logs
