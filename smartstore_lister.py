@@ -124,20 +124,20 @@ def get_naver_token() -> Optional[str]:
 
     for attempt in range(1, CONFIG["RETRY_COUNT"] + 1):
         try:
-            # timestamp: 3초 전 값 사용 (서버 시각 차이 보정)
+            # timestamp: 현재 밀리초 (서버 시각 차이 보정 -3초)
             timestamp = str(int((time.time() - 3) * 1000))
 
-            # bcrypt 해싱: password=timestamp, salt=client_secret
-            password  = timestamp.encode("utf-8")
+            # ✅ 공식 문서 스펙:
+            # password = client_id + "_" + timestamp  (밑줄로 연결)
+            # hashed   = bcrypt.hashpw(password, client_secret)
+            # sign     = pybase64.standard_b64encode(hashed)
+            password  = (NAVER_CLIENT_ID + "_" + timestamp).encode("utf-8")
             salt      = NAVER_CLIENT_SECRET.encode("utf-8")
             hashed    = bcrypt.hashpw(password, salt)
             client_secret_sign = pybase64.standard_b64encode(hashed).decode("utf-8")
 
-            # 디버그: 전송 값 로깅
-            logger.info(f"   client_id: {NAVER_CLIENT_ID}")
             logger.info(f"   timestamp: {timestamp}")
-            logger.info(f"   sign(앞30): {client_secret_sign[:30]}...")
-            logger.info(f"   secret 앞5: {NAVER_CLIENT_SECRET[:5]}")
+            logger.info(f"   password prefix: {NAVER_CLIENT_ID[:8]}_...")
 
             # 토큰 요청
             resp = requests.post(
