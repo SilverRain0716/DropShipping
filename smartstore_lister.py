@@ -133,6 +133,12 @@ def get_naver_token() -> Optional[str]:
             hashed    = bcrypt.hashpw(password, salt)
             client_secret_sign = pybase64.standard_b64encode(hashed).decode("utf-8")
 
+            # 디버그: 전송 값 로깅
+            logger.info(f"   client_id: {NAVER_CLIENT_ID}")
+            logger.info(f"   timestamp: {timestamp}")
+            logger.info(f"   sign(앞30): {client_secret_sign[:30]}...")
+            logger.info(f"   secret 앞5: {NAVER_CLIENT_SECRET[:5]}")
+
             # 토큰 요청
             resp = requests.post(
                 CONFIG["NAVER_TOKEN_URL"],
@@ -147,9 +153,19 @@ def get_naver_token() -> Optional[str]:
                 timeout=15,
                 proxies={"http": None, "https": None},
             )
-            resp.raise_for_status()
-            data = resp.json()
 
+            # ✅ 에러 응답 body를 먼저 로깅 (raise_for_status 전)
+            if not resp.ok:
+                logger.error(
+                    f"❌ 네이버 API 오류 HTTP {resp.status_code}: {resp.text[:400]}"
+                )
+                if resp.status_code == 400:
+                    return None  # 400은 재시도해도 동일 → 즉시 중단
+                if attempt < CONFIG["RETRY_COUNT"]:
+                    time.sleep(random.uniform(3, 7))
+                continue
+
+            data = resp.json()
             token = data.get("access_token")
             if token:
                 expires_in = data.get("expires_in", 3600)
